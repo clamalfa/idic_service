@@ -1,0 +1,59 @@
+version: '3.4'
+
+services:
+  isi_data_insights:
+    image: clamalfa/isi_data_insights
+    configs:
+      - source: isi_data_config
+        target: /etc/data_insights/isi_data_insights_d.cfg
+        mode: 444
+    deploy:
+      replicas: 1
+
+  influxdb:
+    image: influxdb
+    volumes:
+      - influxdb/data:/var/lib/influxdb
+    ports:
+      - "8086:8086"
+    deploy:
+      replicas: 1
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SERVER_ROOT_URL=http://swarm.norcal.se.lab.emc.com:3000
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    deploy:
+      replicas: 1
+
+  kapacitor:
+    image: kapacitor
+    environment:
+      KAPACITOR_HOSTNAME: kapacitor
+      KAPACITOR_INFLUXDB_0_URLS_0: http://swarm.norcal.se.lab.emc.com:8086
+    links:
+      - influxdb
+    ports:
+      - "9092:9092"
+
+configs:
+  isi_data_config:
+    file: ./isi_data_insights_d.cfg
+
+volumes:
+  influxdb_vol:
+    driver_opts:
+      type: "nfs"
+      o: "addr=norcalnfs.norcal.se.lab.emc.com,nolock,soft,rw"
+      device: ":/ifs/norcal455/nfs/swarm/tmp/influxdb"
+  grafana_vol:
+    driver_opts:
+      type: "nfs"
+      o: "addr=norcalnfs.norcal.se.lab.emc.com,nolock,soft,rw"
+      device: ":/ifs/norcal455/nfs/swarm/tmp/grafana"
