@@ -19,12 +19,15 @@ services:
 
   grafana:
     image: clamalfa/idic_grafana
+    networks:
+      - traefik-net
+      - default
     configs:
       - source: grafana_dashboards
-        target: /usr/share/grafana/conf/provisioning/dashboards/default.yml
+        target: /etc/grafana/provisioning/dashboards/default.yml
         mode: 444
       - source: grafana_datasource
-        target: /usr/share/grafana/conf/provisioning/datasources/default.yml
+        target: /etc/grafana/provisioning/datasources/default.yml
         mode: 444
     environment:
       - GF_SERVER_ROOT_URL=https://connor.container.se.lab.emc.com
@@ -42,4 +45,8 @@ configs:
   grafana_dashboards:
     file: ./dashboard_default.yml
   grafana_datasource:
-    file: ./datasource_defaults.yml
+    file: ./datasource_default.yml
+
+networks:
+  traefik-net:
+    external: true
